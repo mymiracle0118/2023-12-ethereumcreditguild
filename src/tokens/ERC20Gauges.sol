@@ -219,7 +219,7 @@ abstract contract ERC20Gauges is ERC20 {
     function incrementGauge(
         address gauge,
         uint256 weight
-    ) public virtual returns (uint256 newUserWeight) {
+    ) public virtual returns (uint256 newUserWeight) {//@audit there is now check
         require(isGauge(gauge), "ERC20Gauges: invalid gauge");
         _incrementGaugeWeight(msg.sender, gauge, weight);
         return _incrementUserAndGlobalWeights(msg.sender, weight);

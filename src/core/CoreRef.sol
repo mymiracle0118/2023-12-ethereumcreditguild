@@ -98,7 +98,7 @@ abstract contract CoreRef is Pausable {
             uint256 value = calls[i].value;
             bytes calldata callData = calls[i].callData;
 
-            (bool success, bytes memory returned) = target.call{value: value}(
+            (bool success, bytes memory returned) = target.call{value: value}(//@audit Dos Attack is possible?
                 callData
             );
             require(success, "CoreRef: underlying call reverted");

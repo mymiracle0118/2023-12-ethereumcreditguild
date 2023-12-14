@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.13;
+pragma solidity ^0.8.13;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -418,7 +418,7 @@ contract LendingTerm is CoreRef {
         RateLimitedMinter(refs.creditMinter).mint(borrower, borrowAmount);
 
         // pull the collateral from the borrower
-        IERC20(params.collateralToken).safeTransferFrom(
+        IERC20(params.collateralToken).safeTransferFrom(//@audit can use fake msg.sender contract for arb call?
             borrower,
             address(this),
             collateralAmount
@@ -615,7 +615,7 @@ contract LendingTerm is CoreRef {
         issuance -= borrowAmount;
 
         // return the collateral to the borrower
-        IERC20(params.collateralToken).safeTransfer(
+        IERC20(params.collateralToken).safeTransfer(//@audit can use fake msg.sender contract?
             loan.borrower,
             loan.collateralAmount
         );

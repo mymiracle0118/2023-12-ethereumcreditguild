@@ -111,7 +111,7 @@ contract LendingTermOnboarding is GuildGovernor {
             "LendingTermOnboarding: invalid implementation"
         );
         // must be an ERC20 (maybe, at least it prevents dumb input mistakes)
-        (bool success, bytes memory returned) = params.collateralToken.call(
+        (bool success, bytes memory returned) = params.collateralToken.call(// @audit can be used fake token?
             abi.encodeWithSelector(IERC20.totalSupply.selector)
         );
         require(
@@ -186,7 +186,7 @@ contract LendingTermOnboarding is GuildGovernor {
 
         // Check that the term was not subject to an onboard vote recently
         require(
-            lastProposal[term] + MIN_DELAY_BETWEEN_PROPOSALS < block.timestamp,
+            lastProposal[term] + MIN_DELAY_BETWEEN_PROPOSALS < block.timestamp,//@audit can take 2 proposal?
             "LendingTermOnboarding: recently proposed"
         );
         lastProposal[term] = block.timestamp;

@@ -22,5 +22,85 @@
   {
     "addr": "0x83f20f44975d03b1b09e64809b757c47f942beea",
     "name": "ERC20_SDAI"
+  },
+  {
+    "addr": "0x6e043c1756920c69310c1b582a5bd5da29507cd4",
+    "name": "CORE"
+  },
+  {
+    "addr": "0x153ac1b6e539b51ed009721f52b518f8da5ecb5f",
+    "name": "PROFIT_MANAGER"
+  },
+  {
+    "addr": "0x8988f2f4c23f9ffa6ba0f9df9040e2851ed741b7",
+    "name": "ERC20_GUSDC"
+  },
+  {
+    "addr": "0xe2267a7e6913887551d467bbeb673ea93236423f",
+    "name": "ERC20_GUILD"
+  },
+  {
+    "addr": "0xa967f0a15a3d96be36dd875c6b490d89b0a45073",
+    "name": "RATE_LIMITED_CREDIT_MINTER"
+  },
+  {
+    "addr": "0xcdb35e7a04c2b0abeed6918c2b73ce81d39b74d1",
+    "name": "RATE_LIMITED_GUILD_MINTER"
+  },
+  {
+    "addr": "0x06c27322113a61befeae5e243cfe4a8ad898846a",
+    "name": "SURPLUS_GUILD_MINTER"
+  },
+  {
+    "addr": "0xad184cbdae466da9e4cd5b20f80ec4beb61d827d",
+    "name": "AUCTION_HOUSE"
+  },
+  {
+    "addr": "0xa70fae56c246dd89ef3308c71d67683e78fa6bed",
+    "name": "LENDING_TERM_V1"
+  },
+  {
+    "addr": "0xbfa46de8209df885361ba756af6672532e245daf",
+    "name": "PSM_USDC"
+  },
+  {
+    "addr": "0xbe4fdf8952887b99b05ecffb6f35e3351f864767",
+    "name": "DAO_GOVERNOR_GUILD"
+  },
+  {
+    "addr": "0x70f909677dd17ffd77e3fb9847fa3c09a3b37199",
+    "name": "DAO_TIMELOCK"
+  },
+  {
+    "addr": "0xb162f988408b81f6ed7dd7ee823c4648e235ffa1",
+    "name": "DAO_VETO_CREDIT"
+  },
+  {
+    "addr": "0x2f5e20e2fc04cdd9b8b39dc5b929fb076320280f",
+    "name": "DAO_VETO_GUILD"
+  },
+  {
+    "addr": "0xc3ca1a99401c92fdd6a1b9f19773ed56d01d8ebe",
+    "name": "ONBOARD_GOVERNOR_GUILD"
+  },
+  {
+    "addr": "0x42b53f1bbbc4f16bb0314ef6ea2f46419b8a250a",
+    "name": "ONBOARD_TIMELOCK"
+  },
+  {
+    "addr": "0xaf0b1bb53bd08f844250a8da0e90d5e05f152140",
+    "name": "ONBOARD_VETO_CREDIT"
+  },
+  {
+    "addr": "0xad471ea8420032ce08833010a892ff77d108a240",
+    "name": "ONBOARD_VETO_GUILD"
+  },
+  {
+    "addr": "0x5b875c4cb60461eb073bf862ed40dbdc15435fda",
+    "name": "OFFBOARD_GOVERNOR_GUILD"
+  },
+  {
+    "addr": "0x2a9a7d7953c742b02f5baa541fd892e2c8b3ea1c",
+    "name": "TERM_SDAI_1"
   }
 ]
