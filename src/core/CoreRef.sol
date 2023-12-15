@@ -86,7 +86,7 @@ abstract contract CoreRef is Pausable {
     /// callable only by governor
     function emergencyAction(
         Call[] calldata calls
-    )
+    )// @audit can be used by malicious contract
         external
         payable
         onlyCoreRole(CoreRoles.GOVERNOR)
