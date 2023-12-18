@@ -327,7 +327,7 @@ abstract contract ERC20MultiVotes is ERC20Permit {
         );
 
         bool newDelegate = _delegates[delegator].add(delegatee); // idempotent add
-        require(
+        require(//@audit if already exist for delegatee, max delegates count will be pass
             !newDelegate ||
                 delegateCount(delegator) <= maxDelegates ||
                 canContractExceedMaxDelegates[delegator],

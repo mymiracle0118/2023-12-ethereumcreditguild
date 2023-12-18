@@ -14,6 +14,8 @@ import {LendingTerm} from "@src/loan/LendingTerm.sol";
 import {AuctionHouse} from "@src/loan/AuctionHouse.sol";
 import {ProfitManager} from "@src/governance/ProfitManager.sol";
 import {RateLimitedMinter} from "@src/rate-limits/RateLimitedMinter.sol";
+import "@forge-std/console.sol";
+import "@forge-std/console2.sol";
 
 contract LendingTermUnitTest is Test {
     address private governor = address(1);
@@ -325,6 +327,17 @@ contract LendingTermUnitTest is Test {
         uint256 collateralAmount = 1e18;
         vm.expectRevert("LendingTerm: cannot borrow 0");
         term.borrow(borrowAmount, collateralAmount);
+    }
+
+    function testHashCollision() public {
+        bytes32 loanId;
+        address borrower = address(0x1);
+        loanId = keccak256(
+            abi.encode(borrower, address(this), block.timestamp)
+        );
+        console2.log(loanId);
+        // vm.expectRevert("LendingTerm: cannot borrow 0");
+        // term.borrow(borrowAmount, collateralAmount);
     }
 
     // borrow fail because loan exists
