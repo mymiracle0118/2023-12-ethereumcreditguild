@@ -15,6 +15,7 @@
     "test:coreref": "forge test --match-path ./test/unit/core/CoreRef.t.sol/ -vvvvv --match-test testSetCoreGovSucceeds",
     "test:testDelegate": "forge test --match-path ./test/unit/tokens/ERC20MultiVotes.t.sol -vvvvv --match-test testDelegate",
     "test:testUnDelegate": "forge test --match-path ./test/unit/tokens/ERC20MultiVotes.t.sol -vvvvv --match-test testDecrementOverWeightFails",
+    "test:testGage": "forge test --match-path ./test/unit/tokens/ERC20MultiVotes.t.sol -vvvvv --match-test testDecrementOverWeightFails",
     "test:borrow": "forge test --match-path ./test/unit/loan/LendingTerm.t.sol -vvvvv --match-test testBorrowSuccess",
     "test:hash": "forge test --match-path ./test/unit/loan/LendingTerm.t.sol -vvvvv --match-test testHashCollision",
     "test:proposals": "forge test --match-path ./test/** --fork-url https://eth-mainnet.g.alchemy.com/v2/6JDkeTZv5fE6ocScgKhoepESgcQ3IGTt -vvv",

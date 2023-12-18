@@ -46,7 +46,7 @@ abstract contract ERC20MultiVotes is ERC20Permit {
     }
 
     /// @notice votes checkpoint list per user.
-    mapping(address => Checkpoint[]) private _checkpoints;//@audit array over flow may be possible
+    mapping(address => Checkpoint[]) private _checkpoints;
 
     /// @notice Get the `pos`-th checkpoint for `account`.
     function checkpoints(
@@ -103,8 +103,7 @@ abstract contract ERC20MultiVotes is ERC20Permit {
     function _checkpointsLookup(
         Checkpoint[] storage ckpts,
         uint256 blockNumber
-    ) private view returns (uint256) {//@audit check more later
-        // We run a binary search to look for the earliest checkpoint taken after `blockNumber`.
+    ) private view returns (uint256) {
         uint256 high = ckpts.length;
         uint256 low = 0;
         while (low < high) {
@@ -327,7 +326,7 @@ abstract contract ERC20MultiVotes is ERC20Permit {
         );
 
         bool newDelegate = _delegates[delegator].add(delegatee); // idempotent add
-        require(//@audit if already exist for delegatee, max delegates count will be pass
+        require(
             !newDelegate ||
                 delegateCount(delegator) <= maxDelegates ||
                 canContractExceedMaxDelegates[delegator],
