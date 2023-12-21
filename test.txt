@@ -1,0 +1,95 @@
+After RateLimitedMinter.mint mints the borrowAmount to the borrower .. erc20.totalSupply isn't updated to reflect the new debt plus totalSupply
+
+Lending term is gauge
+
+If a user calls borrow with a specific collateralAmount which is used to calculate the Max Borrow ... If a user calls addCollateral to add more collaterl ..does the maxBorrow for the user increase?
+
+    function setRedemptionsPaused(
+        bool paused
+    ) external onlyCoreRole(CoreRoles.GOVERNOR) {
+        redemptionsPaused = paused;
+        emit RedemptionsPaused(block.timestamp, paused);
+    }
+Redemption is paused... No redemption can occur in the contract unless when deactivated.
+
+1- totalSupply not updated after debt creation
+
+2-the value of tokens will vary overtime ... How is this accounted for?
+
+3-
+`
+/// @notice repay an open loan
+function _repay(address repayer, bytes32 loanId) internal {
+Loan storage loan = loans[loanId];
+
+    // check the loan is open
+    uint256 borrowTime = loan.borrowTime;
+    require(borrowTime != 0, "LendingTerm: loan not found");
+    require(
+        borrowTime < block.timestamp,
+        "LendingTerm: loan opened in same block"
+    );
+Time tolerance not accounted for 
+
+Time Tolerance: Introduce a small time tolerance to account for potential minor variations in block timestamps, ensuring that valid loan repayments are not erroneously rejected due to small time discrepancies.
+
+
+4- lendingTerm.sol _borrow function when calculating the debt ceiling
+     // check the debt ceiling
+    uint256 totalBorrowedCredit = ProfitManager(refs.profitManager)
+        .totalBorrowedCredit();
+
+function totalBorrowedCredit() external view returns (uint256) {
+    return
+        CreditToken(credit).targetTotalSupply() -
+        SimplePSM(psm).redeemableCredit();
+Then the totalSupply is called in ERC20RebaseDistributor
+function targetTotalSupply() external view returns (uint256) {
+    return ERC20.totalSupply() + __unmintedRebaseRewards.targetValue;
+
+
+5-  https://github.com/code-423n4/2023-12-ethereumcreditguild/blob/2376d9af792584e3d15ec9c32578daa33bb56b43/src/loan/LendingTerm.sol#L567-L577
+
+since the borrowTime is obtained from the loan details stored in the loans mapping, it is unlikely to be updated within the same block. Therefore, the condition "borrowTime < block.timestamp" will likely always evaluate to true, even within the same block.
+
+user could potentially open a loan and repay it within the same block. This is because the condition "require(borrowTime < block.timestamp, "LendingTerm: loan opened in same block")" may not effectively prevent repayments within the same block
+
+
+The borrowTime value in the loans mapping can indeed be updated within the same block, as it is a part of the loan details that can be modified during the execution of a single transaction.
+
+Therefore, based on this correction, the condition "require(borrowTime < block.timestamp, "LendingTerm: loan opened in same block")" may not effectively prevent repayments within the same block. If the intention is to disallow repayments within the same block as the loan opening, additional checks or a different approach may be necessary to enforce this constraint accurately.
+
+6-
+    // update loan in state
+    loans[loanId].borrowAmount -= issuanceDecrease;
+    lastPartialRepay[loanId] = block.timestamp;
+    issuance -= issuanceDecrease;
+PartialRepay pays part of the debt ..but there's no transfer of part of the collateral back to the user ..
+
+
+In full repay .. there's no check if the user had payed part of the debt ...so user will have to pay full to retrieve collateral even of they payed part
+
+7-  - lendingTerm.sol _borrow function when calculating the debt ceiling
+     // check the debt ceiling
+    uint256 totalBorrowedCredit = ProfitManager(refs.profitManager)
+        .totalBorrowedCredit();
+
+function totalBorrowedCredit() external view returns (uint256) {
+    return
+        CreditToken(credit).targetTotalSupply() -
+        SimplePSM(psm).redeemableCredit();
+Then the totalSupply is called in ERC20RebaseDistributor
+function targetTotalSupply() external view returns (uint256) {
+    return ERC20.totalSupply() + __unmintedRebaseRewards.targetValue;
+
+function mint(
+    address to,
+    uint256 amount
+) external onlyCoreRole(role) whenNotPaused {
+    _depleteBuffer(amount); /// check and effects
+    IERC20Mintable(token).mint(to, amount); /// interactions
+}
+`
+totalSupply not updated after borrowAmount is minted to the user
+
+

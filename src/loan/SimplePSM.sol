@@ -80,7 +80,7 @@ contract SimplePSM is CoreRef {
     function getMintAmountOut(uint256 amountIn) public view returns (uint256) {
         uint256 creditMultiplier = ProfitManager(profitManager)
             .creditMultiplier();
-        return (amountIn * decimalCorrection * 1e18) / creditMultiplier;
+        return (amountIn * decimalCorrection * 1e18) / creditMultiplier;//@audit round
     }
 
     /// @notice calculate the amount of underlying out for a given `amountIn` of CREDIT

@@ -13,6 +13,9 @@ import {AuctionHouse} from "@src/loan/AuctionHouse.sol";
 import {ProfitManager} from "@src/governance/ProfitManager.sol";
 import {RateLimitedMinter} from "@src/rate-limits/RateLimitedMinter.sol";
 
+import {console} from "@forge-std/console.sol";
+import {console2} from "@forge-std/console2.sol";
+
 /// @notice Lending Term contract of the Ethereum Credit Guild, a base implementation of
 /// smart contract issuing CREDIT debt and escrowing collateral assets.
 /// Note that interest rate is non-compounding and the percentage is expressed per
@@ -157,14 +160,18 @@ contract LendingTerm is CoreRef {
 
     /// @notice initialize storage with references to other protocol contracts
     /// and the lending term parameters for this instance.
-    function initialize(
+    function initialize(//@audit frontron bot attack is possible?
         address _core,
         LendingTermReferences calldata _refs,
         LendingTermParams calldata _params
     ) external {
+        // console2.log("initialize function");
         // can initialize only once
         assert(address(core()) == address(0));
+        // console2.log("initialize function");
         assert(_core != address(0));
+
+        // console2.log("initialize function");
 
         // initialize storage
         _setCore(_core);
@@ -215,16 +222,21 @@ contract LendingTerm is CoreRef {
 
         // compute interest owed
         uint256 borrowAmount = loan.borrowAmount;
+
         uint256 interest = (borrowAmount *
             params.interestRate *
             (block.timestamp - borrowTime)) /
             YEAR /
             1e18;
+        // interest 0.1e18, openingFee: 0.05e18
         uint256 loanDebt = borrowAmount + interest;
         uint256 _openingFee = params.openingFee;
+
         if (_openingFee != 0) {
+            //borrowAmount = 100, operningfee == 0.05e18
             loanDebt += (borrowAmount * _openingFee) / 1e18;
         }
+
         uint256 creditMultiplier = ProfitManager(refs.profitManager)
             .creditMultiplier();
         loanDebt = (loanDebt * loan.borrowCreditMultiplier) / creditMultiplier;
@@ -269,7 +281,7 @@ contract LendingTerm is CoreRef {
     /// @return the maximum amount of debt that can be issued by this term
     function debtCeiling(
         int256 gaugeWeightDelta
-    ) public view returns (uint256) {
+    ) public view returns (uint256) {//@audit double renetrancy attack is possible?
         address _guildToken = refs.guildToken; // cached SLOAD
         uint256 gaugeWeight = GuildToken(_guildToken).getGaugeWeight(
             address(this)
@@ -340,7 +352,7 @@ contract LendingTerm is CoreRef {
         address borrower,
         uint256 borrowAmount,
         uint256 collateralAmount
-    ) internal returns (bytes32 loanId) {
+    ) internal returns (bytes32 loanId) {//@audit DOS attack?
         require(borrowAmount != 0, "LendingTerm: cannot borrow 0");
         require(collateralAmount != 0, "LendingTerm: cannot stake 0");
 
@@ -354,6 +366,7 @@ contract LendingTerm is CoreRef {
         // check that enough collateral is provided
         uint256 creditMultiplier = ProfitManager(refs.profitManager)
             .creditMultiplier();
+        //@audit if attacker can adjust credit multiplier or maxdebtpercollerteral token, all tokens can be borrowed
         uint256 maxBorrow = (collateralAmount *
             params.maxDebtPerCollateralToken) / creditMultiplier;
         require(
@@ -362,6 +375,7 @@ contract LendingTerm is CoreRef {
         );
 
         // check that enough CREDIT is borrowed
+        //@audit if attacker can adjust min Borrow all tokens will be borrowed
         require(
             borrowAmount >= ProfitManager(refs.profitManager).minBorrow(),
             "LendingTerm: borrow amount too low"
@@ -370,14 +384,18 @@ contract LendingTerm is CoreRef {
         // check the hardcap
         uint256 _issuance = issuance;
         uint256 _postBorrowIssuance = _issuance + borrowAmount;
+        //@audit attacker also should adjust hardcap
         require(
             _postBorrowIssuance <= params.hardCap,
             "LendingTerm: hardcap reached"
         );
 
         // check the debt ceiling
+        //total borrowed amount by this term
+        //@audit if total borrowed minted by lending term < credit mint by simpe psm  then undo flow revert.
         uint256 totalBorrowedCredit = ProfitManager(refs.profitManager)
             .totalBorrowedCredit();
+        //gaugeWeightTolerance = 1.2e18 120%
         uint256 gaugeWeightTolerance = ProfitManager(refs.profitManager)
             .gaugeWeightTolerance();
         uint256 _debtCeiling = (GuildToken(refs.guildToken)
@@ -419,6 +437,7 @@ contract LendingTerm is CoreRef {
 
         // pull the collateral from the borrower
         IERC20(params.collateralToken).safeTransferFrom(//@audit can use fake msg.sender contract for arb call?
+            // cannot find safeTransferFrom IERC20
             borrower,
             address(this),
             collateralAmount
@@ -573,7 +592,7 @@ contract LendingTerm is CoreRef {
         require(
             borrowTime < block.timestamp,
             "LendingTerm: loan opened in same block"
-        );
+        );//@audit check more about reorganization issues
         require(loan.closeTime == 0, "LendingTerm: loan closed");
         require(loan.callTime == 0, "LendingTerm: loan called");
 
@@ -615,7 +634,7 @@ contract LendingTerm is CoreRef {
         issuance -= borrowAmount;
 
         // return the collateral to the borrower
-        IERC20(params.collateralToken).safeTransfer(//@audit can use fake msg.sender contract?
+        IERC20(params.collateralToken).safeTransfer(
             loan.borrower,
             loan.collateralAmount
         );

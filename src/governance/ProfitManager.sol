@@ -393,6 +393,7 @@ contract ProfitManager is CoreRef {
                     if (_gaugeProfitIndex == 0) {
                         _gaugeProfitIndex = 1e18;
                     }
+                    //@audit check math round issue later
                     gaugeProfitIndex[gauge] =
                         _gaugeProfitIndex +
                         (amountForGuild * 1e18) /

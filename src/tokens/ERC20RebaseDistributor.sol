@@ -4,6 +4,9 @@ pragma solidity 0.8.13;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeCastLib} from "@src/external/solmate/SafeCastLib.sol";
 
+import {console} from "@forge-std/console.sol";
+import {console2} from "@forge-std/console2.sol";
+
 /** 
 @title  An ERC20 with rebase capabilities. Anyone can sacrifice tokens to rebase up the balance
         of all addresses that are currently rebasing.
@@ -131,20 +134,40 @@ abstract contract ERC20RebaseDistributor is ERC20 {
     function interpolatedValue(
         InterpolatedValue memory val
     ) internal view returns (uint256) {
+        console2.log("interpolatedValue");
         // load state
         uint256 lastTimestamp = uint256(val.lastTimestamp); // safe upcast
         uint256 lastValue = uint256(val.lastValue); // safe upcast
         uint256 targetTimestamp = uint256(val.targetTimestamp); // safe upcast
         uint256 targetValue = uint256(val.targetValue); // safe upcast
+        
+        console2.log("lastTimestamp");
+        console2.log(lastTimestamp);
+        console2.log("lastValue");
+        console2.log(lastValue);
+        console2.log("targetTimestamp");
+        console2.log(targetTimestamp);
+        console2.log("targetValue");
+        console2.log(targetValue);
 
         // interpolate increase over period
         if (block.timestamp >= targetTimestamp) {
+            console2.log("time over period");
             // if period is passed, return target value
             return targetValue;
         } else {
             // block.timestamp is within [lastTimestamp, targetTimestamp[
+                console2.log("timestamp with in period");
             uint256 elapsed = block.timestamp - lastTimestamp;
+            console2.log("elapsed");
+            console2.log(elapsed);
             uint256 delta = targetValue - lastValue;
+            console2.log("delta");
+            console2.log(delta);
+            console2.log("return value");
+            console2.log(lastValue +
+                (delta * elapsed) /
+                (targetTimestamp - lastTimestamp));
             return
                 lastValue +
                 (delta * elapsed) /
@@ -169,24 +192,39 @@ abstract contract ERC20RebaseDistributor is ERC20 {
         uint256 currentRebasingSharePrice,
         int256 sharesDelta
     ) internal {
+        //No update(plus or minus) shares to the system
+        console2.log("updateTotalRebasingShares");
         if (sharesDelta == 0) return;
+        //totalrebasingshares of system before update
         uint256 sharesBefore = totalRebasingShares;
+        console2.log("total shares before");
+        console2.log(sharesBefore);
         uint256 sharesAfter;
-        if (sharesDelta > 0) {
+        if (sharesDelta > 0) {//plus
+            console2.log("sharesDelta > 0");
             sharesAfter = sharesBefore + uint256(sharesDelta);
-        } else {
+        } else {//minus
+            console2.log("sharesDelta <= 0");
             uint256 shareDecrease = uint256(-sharesDelta);
-            if (shareDecrease < sharesBefore) {
+            if (shareDecrease < sharesBefore) {//avoikding overflow error
                 unchecked {
                     sharesAfter = sharesBefore - shareDecrease;
                 }
             }
             // else sharesAfter stays 0
         }
+        //update totoalrebasingshare
         totalRebasingShares = sharesAfter;
+        console2.log("sharesAfter");
+
+        console2.log("totalRebasingShares");
+        console2.log(totalRebasingShares);
 
         // reset interpolation & share price if going to 0 rebasing supply
+
+        // set default if shares after == 0
         if (sharesAfter == 0) {
+            console2.log("sharesAfter = 0");
             __rebasingSharePrice = InterpolatedValue({
                 lastTimestamp: SafeCastLib.safeCastTo32(block.timestamp), // now
                 lastValue: uint224(START_REBASING_SHARE_PRICE), // safe initial value
@@ -208,13 +246,26 @@ abstract contract ERC20RebaseDistributor is ERC20 {
         // if the rebasing supply 2x, the share price change should 0.5x to 0.125.
         // at the end of the interpolation period, the share price will be 1.375.
         InterpolatedValue memory val = __rebasingSharePrice;
+        //delta means share target value - cur share price
         uint256 delta = uint256(val.targetValue) - currentRebasingSharePrice;
+        console2.log("delta");
+        console2.log(delta);
         if (delta != 0) {
+            console2.log("delta is not 0");
+            // percentchange = totalshare * startrebase share price / totalshare_before
+            // if share delta plus percent_change increase with start_rebasing_share_price
+            //if sare delta minus percent_change decrease with start_rebasing_share_price
             uint256 percentChange = (sharesAfter * START_REBASING_SHARE_PRICE) /
                 sharesBefore;
+            console2.log("percentchange");
+            console2.log(percentChange);
+            // new_share_price will be increase the times of start_rebasing.
+            // new_share_price = cur_shar_price + share_price_delta * start_rebasing_share_price / percent_change
             uint256 targetNewSharePrice = currentRebasingSharePrice +
                 (delta * START_REBASING_SHARE_PRICE) /
                 percentChange;
+            console2.log("targetnewshareprice");
+            console2.log(targetNewSharePrice);
             __rebasingSharePrice = InterpolatedValue({
                 lastTimestamp: SafeCastLib.safeCastTo32(block.timestamp), // now
                 lastValue: SafeCastLib.safeCastTo224(currentRebasingSharePrice), // current value
@@ -226,8 +277,11 @@ abstract contract ERC20RebaseDistributor is ERC20 {
 
     /// @notice decrease unminted rebase rewards, when rewards are minted to users
     function decreaseUnmintedRebaseRewards(uint256 amount) internal {
+        console2.log("deceaseUnmintedRebaseRewards function");
         InterpolatedValue memory val = __unmintedRebaseRewards;
         uint256 _unmintedRebaseRewards = interpolatedValue(val);
+        console2.log("unmintedrebaserewards");
+        console2.log(_unmintedRebaseRewards);
         __unmintedRebaseRewards = InterpolatedValue({
             lastTimestamp: SafeCastLib.safeCastTo32(block.timestamp), // now
             lastValue: SafeCastLib.safeCastTo224(
@@ -236,15 +290,21 @@ abstract contract ERC20RebaseDistributor is ERC20 {
             targetTimestamp: val.targetTimestamp, // unchanged
             targetValue: val.targetValue - SafeCastLib.safeCastTo224(amount) // adjusted target
         });
+        console2.log("lastValue");
+        console2.log(SafeCastLib.safeCastTo224(_unmintedRebaseRewards - amount));
+        console2.log("targetValue");
+        console2.log(val.targetValue - SafeCastLib.safeCastTo224(amount));
     }
 
     /// @notice get the current rebasing share price
     function rebasingSharePrice() internal view returns (uint256) {
+        console2.log("rebasingSharePrice function");
         return interpolatedValue(__rebasingSharePrice);
     }
 
     /// @notice get the current unminted rebase rewards
     function unmintedRebaseRewards() internal view returns (uint256) {
+        console2.log("unminted rebase rewards");
         return interpolatedValue(__unmintedRebaseRewards);
     }
 
@@ -279,6 +339,7 @@ abstract contract ERC20RebaseDistributor is ERC20 {
     /// @notice Enter rebasing supply. All subsequent distributions will increase the balance
     /// of `msg.sender` proportionately.
     function enterRebase() external {
+        console2.log("Enter rebase function");
         require(
             rebasingState[msg.sender].isRebasing == 0,
             "ERC20RebaseDistributor: already rebasing"
@@ -288,12 +349,22 @@ abstract contract ERC20RebaseDistributor is ERC20 {
 
     function _enterRebase(address account) internal {
         uint256 balance = ERC20.balanceOf(account);
+        console2.log("token balance");
+        console2.log(balance);
+        //get rebasing price with time elapse
         uint256 currentRebasingSharePrice = rebasingSharePrice();
+        console2.log("currentRebasingSharePrice");
+        console2.log(currentRebasingSharePrice);
+        //convet balance to shares
         uint256 shares = _balance2shares(balance, currentRebasingSharePrice);
+        console2.log("shares");
+        console2.log(shares);
+        //set rebasing state
         rebasingState[account] = RebasingState({
             isRebasing: 1,
             nShares: uint248(shares)
         });
+        //update reabaing shares status
         updateTotalRebasingShares(currentRebasingSharePrice, int256(shares));
         emit RebaseEnter(account, block.timestamp);
     }
@@ -309,18 +380,30 @@ abstract contract ERC20RebaseDistributor is ERC20 {
     }
 
     function _exitRebase(address account) internal {
+        console2.log("-----------exit rebase function------------");
         uint256 rawBalance = ERC20.balanceOf(account);
+        console2.log("raw balance");
+        console2.log(rawBalance);
         RebasingState memory _rebasingState = rebasingState[account];
         uint256 shares = uint256(_rebasingState.nShares);
+        console2.log("shares");
+        console2.log(shares);
         uint256 currentRebasingSharePrice = rebasingSharePrice();
+        console2.log("current rebasing share price");
+        console2.log(currentRebasingSharePrice);
         uint256 rebasedBalance = _shares2balance(
             shares,
             currentRebasingSharePrice,
             0,
             rawBalance
         );
+        console2.log("rebased balance");
+        console2.log(rebasedBalance);
         uint256 mintAmount = rebasedBalance - rawBalance;
+        console2.log("mint amount");
+        console2.log(mintAmount);
         if (mintAmount != 0) {
+            console2.log("mint amount is not zero");
             ERC20._mint(account, mintAmount);
             decreaseUnmintedRebaseRewards(mintAmount);
             emit RebaseReward(account, block.timestamp, mintAmount);
@@ -337,19 +420,27 @@ abstract contract ERC20RebaseDistributor is ERC20 {
     /// from `msg.sender` and emit an event, but won't rebase up any balances.
     function distribute(uint256 amount) external {
         require(amount != 0, "ERC20RebaseDistributor: cannot distribute zero");
-
+        console2.log("distribute function");
         // burn the tokens received
         _burn(msg.sender, amount);
 
+        console2.log("after burn");
+
         // emit event
         uint256 _rebasingSharePrice = rebasingSharePrice();
+        console2.log("rebasing share price");
+        console2.log(_rebasingSharePrice);
         uint256 _totalRebasingShares = totalRebasingShares;
+        console2.log("_totalRebasingShares");
+        console2.log(_totalRebasingShares);
         uint256 _rebasingSupply = _shares2balance(
             _totalRebasingShares,
             _rebasingSharePrice,
             0,
             0
         );
+        console2.log("rebasingsupply");
+        console2.log(_rebasingSupply);
         emit RebaseDistribution(
             msg.sender,
             block.timestamp,
@@ -360,21 +451,37 @@ abstract contract ERC20RebaseDistributor is ERC20 {
         // adjust up the balance of all accounts that are rebasing by increasing
         // the share price of rebasing tokens
         if (_rebasingSupply != 0) {
+            console2.log("rebasing supply is not 0");
+
             // update rebasingSharePrice interpolation
             uint256 endTimestamp = block.timestamp + DISTRIBUTION_PERIOD;
+            console2.log("end time stamp");
+            console2.log(endTimestamp);
             uint256 newTargetSharePrice = (amount *
                 START_REBASING_SHARE_PRICE +
                 __rebasingSharePrice.targetValue *
                 _totalRebasingShares) / _totalRebasingShares;
+            console2.log("new targetshareprice");
+            console2.log(newTargetSharePrice);
             __rebasingSharePrice = InterpolatedValue({
                 lastTimestamp: SafeCastLib.safeCastTo32(block.timestamp),
                 lastValue: SafeCastLib.safeCastTo224(_rebasingSharePrice),
                 targetTimestamp: SafeCastLib.safeCastTo32(endTimestamp),
                 targetValue: SafeCastLib.safeCastTo224(newTargetSharePrice)
             });
+            // console2.log("rebasing share price");
+            // console2.log(__rebasingSharePrice);
 
             // update unmintedRebaseRewards interpolation
             uint256 _unmintedRebaseRewards = unmintedRebaseRewards();
+            console2.log("unmintedrebase rewards");
+            console2.log(_unmintedRebaseRewards);
+            console2.log("last value");
+            console2.log(SafeCastLib.safeCastTo224(_unmintedRebaseRewards));
+            console2.log("target value");
+            console2.log(__unmintedRebaseRewards.targetValue +
+                SafeCastLib.safeCastTo224(amount));
+
             __unmintedRebaseRewards = InterpolatedValue({
                 lastTimestamp: SafeCastLib.safeCastTo32(block.timestamp),
                 lastValue: SafeCastLib.safeCastTo224(_unmintedRebaseRewards),
@@ -392,6 +499,9 @@ abstract contract ERC20RebaseDistributor is ERC20 {
 
     /// @notice Total number of the tokens that are rebasing.
     function rebasingSupply() public view returns (uint256) {
+        console2.log("rebasingSupply function");
+        console2.log("totalRebasingShares");
+        console2.log(totalRebasingShares);
         return _shares2balance(totalRebasingShares, rebasingSharePrice(), 0, 0);
     }
 
@@ -461,22 +571,39 @@ abstract contract ERC20RebaseDistributor is ERC20 {
     function _burn(address account, uint256 amount) internal virtual override {
         // if `account` is rebasing, materialize the tokens from rebase first, to ensure
         // proper behavior in `ERC20._burn()`.
+        console2.log("------------burn function--------------");
         RebasingState memory _rebasingState = rebasingState[account];
         uint256 balanceBefore;
         uint256 _rebasingSharePrice;
+        console2.log("is rebasing");
+        console2.log(_rebasingState.isRebasing == 1);
+        console2.log("shares");
+        console2.log(_rebasingState.nShares);
         if (_rebasingState.isRebasing == 1) {
+            console2.log("rebasing now");
             balanceBefore = ERC20.balanceOf(account);
+            console2.log("balancebefore");
+            console2.log(balanceBefore);
             _rebasingSharePrice = rebasingSharePrice();
+            console2.log("rebasingSharePrice");
+            console2.log(_rebasingSharePrice);
             uint256 rebasedBalance = _shares2balance(
                 _rebasingState.nShares,
                 _rebasingSharePrice,
                 0,
                 balanceBefore
             );
+            console2.log("rebasedBalance");
+            console2.log(rebasedBalance);
             uint256 mintAmount = rebasedBalance - balanceBefore;
+            console2.log("mintAmount");
+            console2.log(mintAmount);
             if (mintAmount != 0) {
+                console2.log("mintamount is not 0");
                 ERC20._mint(account, mintAmount);
                 balanceBefore += mintAmount;
+                console2.log("balance before");
+                console2.log(balanceBefore);
                 decreaseUnmintedRebaseRewards(mintAmount);
                 emit RebaseReward(account, block.timestamp, mintAmount);
             }
@@ -487,12 +614,19 @@ abstract contract ERC20RebaseDistributor is ERC20 {
 
         // if `account` is rebasing, update its number of shares
         if (_rebasingState.isRebasing == 1) {
+            console2.log("is rebasing");
             uint256 balanceAfter = balanceBefore - amount;
+            console2.log("balance after");
+            console2.log(balanceAfter);
             uint256 sharesAfter = _balance2shares(
                 balanceAfter,
                 _rebasingSharePrice
             );
+            console2.log("shares after");
+            console2.log(sharesAfter);
             uint256 sharesBurnt = _rebasingState.nShares - sharesAfter;
+            console2.log("shares burnt");
+            console2.log(sharesBurnt);
             rebasingState[account] = RebasingState({
                 isRebasing: 1,
                 nShares: uint248(sharesAfter)
@@ -508,27 +642,46 @@ abstract contract ERC20RebaseDistributor is ERC20 {
     /// and re-enter rebasing after movement (if rebasing).
     function _mint(address account, uint256 amount) internal virtual override {
         // do ERC20._mint()
+        console2.log("mint function");
         ERC20._mint(account, amount);
 
         // if `account` is rebasing, update its number of shares
         RebasingState memory _rebasingState = rebasingState[account];
+        console2.log("rebasing state flag");
+        console2.log(_rebasingState.isRebasing);
+        console2.log("rebasing state shares");
+        console2.log(_rebasingState.nShares);
         if (_rebasingState.isRebasing == 1) {
+            console2.log("rebasing now");
             // compute rebased balance
             uint256 _rebasingSharePrice = rebasingSharePrice();
+            console2.log("rebasingshareprice");
+            console2.log(_rebasingSharePrice);
             uint256 rawBalance = ERC20.balanceOf(account);
+            console2.log("rawbalance");
+            console2.log(rawBalance);
+            console2.log("user shares");
+            console2.log(_rebasingState.nShares);
+            //share -> balance
             uint256 rebasedBalance = _shares2balance(
                 _rebasingState.nShares,
                 _rebasingSharePrice,
                 amount,
                 rawBalance
             );
+            console2.log("rebasedBalance");
+            console.log(rebasedBalance);
 
             // update number of shares
             uint256 sharesAfter = _balance2shares(
                 rebasedBalance,
                 _rebasingSharePrice
             );
+            console2.log("sharesAfter");
+            console2.log(sharesAfter);
             uint256 sharesReceived = sharesAfter - _rebasingState.nShares;
+            console2.log("sharesReceived");
+            console2.log(sharesReceived);
             rebasingState[account] = RebasingState({
                 isRebasing: 1,
                 nShares: uint248(sharesAfter)
@@ -540,7 +693,10 @@ abstract contract ERC20RebaseDistributor is ERC20 {
 
             // "realize" unminted rebase rewards
             uint256 mintAmount = rebasedBalance - rawBalance;
+            console2.log("mintAmount");
+            console2.log(mintAmount);
             if (mintAmount != 0) {
+                console2.log("mintAmount is not 0");
                 ERC20._mint(account, mintAmount);
                 decreaseUnmintedRebaseRewards(mintAmount);
                 emit RebaseReward(account, block.timestamp, mintAmount);

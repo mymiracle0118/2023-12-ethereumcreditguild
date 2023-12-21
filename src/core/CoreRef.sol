@@ -6,6 +6,9 @@ import {CoreRoles} from "@src/core/CoreRoles.sol";
 
 import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
 
+import {console} from "@forge-std/console.sol";
+import {console2} from "@forge-std/console2.sol";
+
 /// @title A Reference to Core
 /// @author eswak
 /// @notice defines some modifiers and utilities around interacting with Core
@@ -18,6 +21,8 @@ abstract contract CoreRef is Pausable {
 
     constructor(address coreAddress) {
         _core = Core(coreAddress);
+        // console2.log("----core address----");
+        console.log(address(_core));
     }
 
     /// @notice named onlyCoreRole to prevent collision with OZ onlyRole modifier
@@ -28,6 +33,7 @@ abstract contract CoreRef is Pausable {
 
     /// @notice address of the Core contract referenced
     function core() public view returns (Core) {
+        // console2.log("core() function indside");
         return _core;
     }
 

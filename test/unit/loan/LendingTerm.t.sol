@@ -14,8 +14,9 @@ import {LendingTerm} from "@src/loan/LendingTerm.sol";
 import {AuctionHouse} from "@src/loan/AuctionHouse.sol";
 import {ProfitManager} from "@src/governance/ProfitManager.sol";
 import {RateLimitedMinter} from "@src/rate-limits/RateLimitedMinter.sol";
-import "@forge-std/console.sol";
-import "@forge-std/console2.sol";
+
+import {console} from "@forge-std/console.sol";
+import {console2} from "@forge-std/console2.sol";
 
 contract LendingTermUnitTest is Test {
     address private governor = address(1);
@@ -80,6 +81,26 @@ contract LendingTermUnitTest is Test {
                 hardCap: _HARDCAP
             })
         );
+        // console2.log("-------------------------test-------------------------");
+        // term.initialize(
+        //     address(core),
+        //     LendingTerm.LendingTermReferences({
+        //         profitManager: address(profitManager),
+        //         guildToken: address(guild),
+        //         auctionHouse: address(auctionHouse),
+        //         creditMinter: address(rlcm),
+        //         creditToken: address(credit)
+        //     }),
+        //     LendingTerm.LendingTermParams({
+        //         collateralToken: address(collateral),
+        //         maxDebtPerCollateralToken: _CREDIT_PER_COLLATERAL_TOKEN,
+        //         interestRate: _INTEREST_RATE,
+        //         maxDelayBetweenPartialRepay: _MAX_DELAY_BETWEEN_PARTIAL_REPAY,
+        //         minPartialRepayPercent: _MIN_PARTIAL_REPAY_PERCENT,
+        //         openingFee: 0,
+        //         hardCap: _HARDCAP
+        //     })
+        // );
         psm = new SimplePSM(
             address(core),
             address(profitManager),
@@ -229,6 +250,12 @@ contract LendingTermUnitTest is Test {
         collateral.mint(address(this), collateralAmount);
         collateral.approve(address(term), collateralAmount);
 
+        // uint256 creditMultiplier = ProfitManager(term.getReferences().profitManager).creditMultiplier();
+        // console2.log("credit multiplier");
+        // console2.log(creditMultiplier);
+        // console2.log(_CREDIT_PER_COLLATERAL_TOKEN);
+
+        // return;
         // borrow
         bytes32 loanId = term.borrow(borrowAmount, collateralAmount);
 
@@ -251,7 +278,8 @@ contract LendingTermUnitTest is Test {
         assertEq(term.getLoanDebt(loanId), borrowAmount);
 
         // check interest accrued over time
-        vm.warp(block.timestamp + term.YEAR());
+        // vm.warp(block.timestamp + term.YEAR());
+        vm.warp(block.timestamp);
         assertEq(term.getLoanDebt(loanId), (borrowAmount * 110) / 100); // 10% APR
     }
 
@@ -331,11 +359,11 @@ contract LendingTermUnitTest is Test {
 
     function testHashCollision() public {
         bytes32 loanId;
-        address borrower = address(0x1);
+        address borrower = address(0x2);
         loanId = keccak256(
             abi.encode(borrower, address(this), block.timestamp)
         );
-        console2.log(loanId);
+        console.log(uint256(loanId));
         // vm.expectRevert("LendingTerm: cannot borrow 0");
         // term.borrow(borrowAmount, collateralAmount);
     }

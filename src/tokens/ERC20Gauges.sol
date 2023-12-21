@@ -184,7 +184,6 @@ abstract contract ERC20Gauges is ERC20 {
         uint256 quantity
     ) external view returns (uint256) {
         if (_deprecatedGauges.contains(gauge)) return 0;
-
         uint256 total = totalTypeWeight[gaugeType[gauge]];
         if (total == 0) return 0;
         uint256 weight = getGaugeWeight[gauge];
@@ -219,7 +218,7 @@ abstract contract ERC20Gauges is ERC20 {
     function incrementGauge(
         address gauge,
         uint256 weight
-    ) public virtual returns (uint256 newUserWeight) {//@audit there is now check
+    ) public virtual returns (uint256 newUserWeight) {
         require(isGauge(gauge), "ERC20Gauges: invalid gauge");
         _incrementGaugeWeight(msg.sender, gauge, weight);
         return _incrementUserAndGlobalWeights(msg.sender, weight);
